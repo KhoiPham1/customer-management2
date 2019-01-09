@@ -1,6 +1,8 @@
 package com.codegym.cms.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table
@@ -8,6 +10,8 @@ public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @NotEmpty(message = "khoidz")
+
     private String firstName;
     private String lastName;
 

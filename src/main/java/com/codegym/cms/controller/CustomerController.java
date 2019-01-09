@@ -1,6 +1,7 @@
 package com.codegym.cms.controller;
 
 import com.codegym.cms.model.Customer;
+import com.codegym.cms.model.PhoneNumber;
 import com.codegym.cms.model.Province;
 import com.codegym.cms.service.CustomerService;
 import com.codegym.cms.service.ProvinceService;
@@ -9,9 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,19 +41,26 @@ public class CustomerController {
     }
 
     @PostMapping("/create-customer")
-    public ModelAndView saveCustomer(@ModelAttribute("customer") Customer customer){
-        customerService.save(customer);
+    public ModelAndView saveCustomer(@Validated @ModelAttribute("customer") Customer customer, BindingResult bindingResult){
+        if (bindingResult.hasFieldErrors()){
+            ModelAndView modelAndView = new ModelAndView("/customer/create", "abc", customer);
+//            modelAndView.addObject("customer", customer);
+            return modelAndView;
+        }
+        else {
+            customerService.save(customer);
+            ModelAndView modelAndView = new ModelAndView("/customer/create");
+            modelAndView.addObject("customer", new Customer());
+            modelAndView.addObject("message", "New customer created successfully");
+            return modelAndView;
+        }
 
-        ModelAndView modelAndView = new ModelAndView("/customer/create");
-        modelAndView.addObject("customer", new Customer());
-        modelAndView.addObject("message", "New customer created successfully");
-        return modelAndView;
     }
     @GetMapping("/customers")
-    public ModelAndView listCustomers(@RequestParam("s") Optional<String> s,@PageableDefault(size = 5) Pageable pageable){
+    public ModelAndView listCustomers(@RequestParam("ab") Optional<String> ab,@PageableDefault(size = 5) Pageable pageable){
         Page<Customer> customers;
-        if(s.isPresent()){
-            customers = customerService.findTop3ByFirstNameContaining(s.get(), pageable);
+        if(ab.isPresent()){
+            customers = customerService.findTop3ByFirstNameContaining(ab.get(), pageable);
         }else {
             customers = customerService.findAll(pageable);
         }
@@ -94,6 +106,23 @@ public class CustomerController {
         customerService.remove(customer.getId());
         return "redirect:customers";
     }
+    @GetMapping("/phone")
+    public String showForm(Model model){
+        model.addAttribute("phoneNumber", new PhoneNumber());
+        return "/customer/phone";
+    }
+    @PostMapping("/valid-phone")
+    public String checkValidation (@Valid @ModelAttribute("phoneNumber")PhoneNumber phoneNumber, BindingResult bindingResult, Model model){
+        new PhoneNumber().validate(phoneNumber, bindingResult);
+        if (bindingResult.hasFieldErrors()){
+            return "/customer/phone";
+        }
+        else {
+            model.addAttribute("phoneNumber", phoneNumber.getNumber());
+            return "/customer/result";
+        }
+    }
+
 //    @GetMapping("/customers")
 //    public ModelAndView listCustomer(@RequestParam("s")Optional<String>s,Pageable pageable){
 //        Page<Customer>customers;
